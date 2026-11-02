@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>素数ギャップ集計装置｜オメガ開発所</title>
+<style>
+:root{
+  --paper:#eef2f7; --ink:#14233f; --sub:#52627f; --line:#c9d3e2; --card:#fff; --accent:#d6246e; --bar:#2b4fd8;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--paper:#101a2e; --ink:#e8eefb; --sub:#9db0d0; --line:#2a3a5c; --card:#17233c; --accent:#ff5c9d; --bar:#6f93ff; color-scheme:dark;}
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"Hiragino Sans","Yu Gothic UI","Noto Sans JP",system-ui,sans-serif; line-height:1.7;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:28px 28px; background-attachment:fixed;
+}
+main{max-width:720px; margin:0 auto; padding:32px 18px 64px}
+h1{font-size:clamp(28px,6vw,44px); line-height:1.25; margin:0 0 8px; letter-spacing:.02em}
+.lead{color:var(--sub); margin:0 0 28px; max-width:34em}
+.panel{background:var(--card); border:2px solid var(--ink); border-radius:6px; padding:20px; box-shadow:6px 6px 0 var(--ink)}
+label{display:block; font-weight:700; margin-bottom:8px}
+.row{display:flex; gap:10px; flex-wrap:wrap}
+input{flex:1 1 180px; min-width:0; font:inherit; font-size:22px; padding:10px 12px; border:2px solid var(--ink); border-radius:4px; background:var(--paper); color:var(--ink); font-variant-numeric:tabular-nums}
+button{font:inherit; font-weight:700; padding:10px 22px; border:2px solid var(--ink); border-radius:4px; background:var(--accent); color:#fff; cursor:pointer}
+button:disabled{opacity:.6; cursor:wait}
+:focus-visible{outline:3px solid var(--bar); outline-offset:2px}
+.hint{font-size:14px; color:var(--sub); margin:10px 0 0}
+.err{color:var(--accent); font-weight:700; margin:10px 0 0; min-height:1.5em}
+#out{margin-top:32px}
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:28px}
+.stat{background:var(--card); border:2px solid var(--ink); border-radius:6px; padding:14px 16px}
+.stat small{display:block; color:var(--sub); font-size:14px}
+.stat b{font-size:clamp(22px,5vw,30px); font-variant-numeric:tabular-nums; word-break:break-all}
+.stat span{font-size:13px; color:var(--sub)}
+h2{font-size:20px; margin:0 0 12px}
+.gaps{display:grid; grid-template-columns:auto 1fr auto; gap:6px 12px; align-items:center}
+.gaps .g{font-weight:700; font-variant-numeric:tabular-nums; text-align:right}
+.track{height:18px; background:var(--line); border-radius:3px; overflow:hidden}
+.fill{height:100%; background:var(--bar); min-width:2px}
+.gaps .c{font-variant-numeric:tabular-nums; text-align:right; min-width:5ch}
+.head{font-size:13px; color:var(--sub)}
+footer{margin-top:40px; color:var(--sub); font-size:13px}
+@media (prefers-reduced-motion:no-preference){.fill{transition:width .4s ease}}
+</style>
+</head>
+<body>
+<main>
+  <h1>素数ギャップ集計装置</h1>
+  <p class="lead">N以下の素数をすべて見つけて、となり合う素数の差（ギャップ）が何回出てくるかを数えます。</p>
+
+  <section class="panel">
+    <label for="n">調べる範囲 N（2〜1,000,000,000の整数）</label>
+    <div class="row">
+      <input id="n" type="text" inputmode="numeric" value="1000" autocomplete="off">
+      <button id="go" type="button">計算する</button>
+    </div>
+    <p class="err" id="err" role="alert"></p>
+    <p class="hint">例：N = 100 なら、2, 3, 5, 7, … , 97 の25個が対象です。Nが大きいほど時間とメモリを使います。</p>
+  </section>
+
+  <section id="out" hidden>
+    <div class="stats">
+      <div class="stat"><small>素数の数</small><b id="cnt"></b></div>
+      <div class="stat"><small>素数濃度</small><b id="den"></b><br><span id="pct"></span></div>
+      <div class="stat"><small>ギャップの種類 / 最大ギャップ</small><b id="kinds"></b><br><span id="maxg"></span></div>
+    </div>
+    <h2>ギャップの集計</h2>
+    <div class="gaps" id="gaps"></div>
+  </section>
+
+  <footer>1.素数ギャップとは、隣り合った素数同士の差のことです。</footer>
+  <footer>2.ここでは、素数濃度=素数の数 ÷ Nと定義しています。</footer>
+  <footer>3.本サイトはJavaScript・HTML・CSSの3つの言語で動作しています。</footer>
+  <footer>4.表示の最適化にAIを使用しています。</footer>
+  <footer>オメガ開発所｜<a href="https://x.com/omega404in" target="_blank" rel="noopener">X（@omega404in）</footer>
+</main>
+
+<script>
+// ===== 計算部分 =====
+//   { count: 素数の数, gaps: Map(ギャップ → 出現回数) }
+function analyze(N){
+
+    const natural = new Uint8Array(N + 1).fill(true);
+
+    natural[0] = false;
+    natural[1] = false;
+
+    for (let i = 2; i * i <= N; i++) {
+
+        if (natural[i] == true) {
+
+            for (let j = i; i * j <= N; j++) {
+
+                natural[i * j] = false;
+
+            }
+
+        }
+
+    }
+
+    let primes = [];
+
+    for (let i = 0; i < natural.length; i++) {
+
+        if (natural[i] == true) {
+
+            primes.push(i);
+
+        }
+
+    }
+
+    let gaps = [];
+
+    for (let i = 1; i < primes.length; i++) {
+
+        gaps.push(primes[i] - primes[i - 1])
+
+    }
+
+    const countMap = new Map();
+
+    for (const item of gaps) {
+
+        countMap.set(item, (countMap.get(item) || 0) + 1);
+
+    }
+
+    return { count: primes.length, gaps: countMap };
+}
+
+// ===== 画面部分 =====
+const MAX_N = 1000000000;
+const $ = id => document.getElementById(id);
+const fmt = x => x.toLocaleString("ja-JP");
+
+function run(){
+  $("err").textContent = "";
+  const raw = $("n").value.replace(/[,\s]/g, "").replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+  if (!/^\d+$/.test(raw)){ $("err").textContent = "整数で入力してください。"; return; }
+  const N = Number(raw);
+  if (N < 2 || N > MAX_N){ $("err").textContent = "2以上 " + fmt(MAX_N) + " 以下の整数にしてください。"; return; }
+
+  $("go").disabled = true; $("go").textContent = "計算中…";
+  setTimeout(() => {
+    try { show(N, analyze(N)); }
+    catch (e) { $("err").textContent = "計算できませんでした。Nを小さくしてください。"; }
+    $("go").disabled = false; $("go").textContent = "計算する";
+  }, 20);
+}
+
+function show(N, r){
+  const list = [...r.gaps.entries()].sort((a, b) => a[0] - b[0]);
+  const total = list.reduce((s, [, c]) => s + c, 0);
+  const top = Math.max(1, ...list.map(([, c]) => c));
+  const maxGap = list.length ? list[list.length - 1][0] : 0;
+  const density = r.count / N;
+
+  $("cnt").textContent = fmt(r.count) + " 個";
+  $("den").textContent = density.toFixed(6);
+  $("pct").textContent = "約 " + (density * 100).toFixed(3) + " %";
+  $("kinds").textContent = list.length + " 種類";
+  $("maxg").textContent = list.length ? "最大ギャップ " + fmt(maxGap) : "ギャップなし（素数が1個）";
+
+  const box = $("gaps");
+  box.innerHTML = '<span class="head g">ギャップ</span><span class="head">割合</span><span class="head c">回数</span>';
+  for (const [g, c] of list){
+    const a = document.createElement("span"); a.className = "g"; a.textContent = fmt(g);
+    const t = document.createElement("span"); t.className = "track";
+    const f = document.createElement("span"); f.className = "fill"; f.style.display = "block";
+    f.style.width = (c / top * 100) + "%";
+    f.title = (c / total * 100).toFixed(2) + " %";
+    t.appendChild(f);
+    const n = document.createElement("span"); n.className = "c"; n.textContent = fmt(c);
+    box.append(a, t, n);
+  }
+  $("out").hidden = false;
+}
+
+$("go").addEventListener("click", run);
+$("n").addEventListener("keydown", e => { if (e.key === "Enter") run(); });
+run();
+</script>
+</body>
+</html>
