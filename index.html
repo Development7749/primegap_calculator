@@ -52,13 +52,13 @@ footer{margin-top:40px; color:var(--sub); font-size:13px}
 </head>
 <body>
 <main>
-  <h1>素数ギャップ集計装置</h1>
-  <p class="lead">N以下の素数をすべて見つけて、となり合う素数の差（ギャップ）が何回出てくるかを数えます。</p>
+  <h1>素数集計機</h1>
+  <p class="lead">N以下の素数を全探索し、素数の数、素数濃度、素数ギャップを出力します。</p>
 
   <section class="panel">
-    <label for="n">調べる範囲 N（2〜1,000,000,000の整数）</label>
+    <label for="n">調べる範囲 N（2以上1,000,000,000以下の整数）</label>
     <div class="row">
-      <input id="n" type="text" inputmode="numeric" value="1000" autocomplete="off">
+      <input id="n" type="text" inputmode="numeric" value="100" autocomplete="off">
       <button id="go" type="button">計算する</button>
     </div>
     <p class="err" id="err" role="alert"></p>
