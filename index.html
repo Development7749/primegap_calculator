@@ -53,7 +53,7 @@ footer{margin-top:40px; color:var(--sub); font-size:13px}
 <body>
 <main>
   <h1>素数集計機</h1>
-  <p class="lead">N以下の素数を全探索し、素数の数、素数濃度、素数ギャップを出力します。</p>
+  <p class="lead">N以下の素数を全探索し、素数の数、素数密度、素数ギャップを出力します。</p>
 
   <section class="panel">
     <label for="n">調べる範囲 N（2以上1,000,000,000以下の整数）</label>
@@ -68,7 +68,7 @@ footer{margin-top:40px; color:var(--sub); font-size:13px}
   <section id="out" hidden>
     <div class="stats">
       <div class="stat"><small>素数の数</small><b id="cnt"></b></div>
-      <div class="stat"><small>素数濃度</small><b id="den"></b><br><span id="pct"></span></div>
+      <div class="stat"><small>素数密度</small><b id="den"></b><br><span id="pct"></span></div>
       <div class="stat"><small>ギャップの種類 / 最大ギャップ</small><b id="kinds"></b><br><span id="maxg"></span></div>
     </div>
     <h2>ギャップの集計</h2>
@@ -76,7 +76,7 @@ footer{margin-top:40px; color:var(--sub); font-size:13px}
   </section>
 
   <footer>1.素数ギャップとは、隣り合った素数同士の差のことです。</footer>
-  <footer>2.ここでは、素数濃度=素数の数 ÷ Nと定義しています。</footer>
+  <footer>2.ここでは、素数密度=素数の数 ÷ Nと定義しています。</footer>
   <footer>3.本サイトはJavaScript・HTML・CSSの3つの言語で動作しています。</footer>
   <footer>4.表示の最適化にAIを使用しています。</footer>
 </main>
