@@ -53,10 +53,10 @@ footer{margin-top:40px; color:var(--sub); font-size:13px}
 <body>
 <main>
   <h1>素数集計機</h1>
-  <p class="lead">N以下の素数を全探索し、素数の数、素数密度、素数ギャップを出力します。</p>
+  <p class="lead">N以下の素数を全探索し、素数の個数、素数密度、素数ギャップを出力します。</p>
 
   <section class="panel">
-    <label for="n">調べる範囲 N（2以上1,000,000,000以下の整数）</label>
+    <label for="n">調べる範囲 N（2以上2,500,000,000以下の整数）</label>
     <div class="row">
       <input id="n" type="text" inputmode="numeric" value="100" autocomplete="off">
       <button id="go" type="button">計算する</button>
@@ -78,12 +78,10 @@ footer{margin-top:40px; color:var(--sub); font-size:13px}
   <footer>1.素数ギャップとは、隣り合った素数同士の差のことです。</footer>
   <footer>2.ここでは、素数密度=素数の数 ÷ Nと定義しています。</footer>
   <footer>3.本サイトはJavaScript・HTML・CSSの3つの言語で動作しています。</footer>
-  <footer>4.表示の最適化にAIを使用しています。</footer>
 </main>
 
 <script>
 // ===== 計算部分 =====
-//   { count: 素数の数, gaps: Map(ギャップ → 出現回数) }
 function analyze(N){
 
     const natural = new Uint8Array(N + 1).fill(true);
@@ -137,7 +135,7 @@ function analyze(N){
 }
 
 // ===== 画面部分 =====
-const MAX_N = 1000000000;
+const MAX_N = 2500000000;
 const $ = id => document.getElementById(id);
 const fmt = x => x.toLocaleString("ja-JP");
 
